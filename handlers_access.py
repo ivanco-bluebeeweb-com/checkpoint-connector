@@ -45,10 +45,10 @@ async def list_access_layers(ctx, params: ListAccessLayersParams) -> ActionResul
     try:
         data = await cc.call(ctx, conn, "show-access-layers", {"limit": 100})
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
     items = [AccessLayer(id=l.get("uid", ""), title=l.get("name", "")) for l in data.get("access-layers", [])]
-    return ActionResult(success=True, data=AccessLayerList(title=f"{len(items)} access layer(s)", items=items))
+    return ActionResult.success(AccessLayerList(title=f"{len(items)} access layer(s)", items=items), summary="Access layers listed.")
 
 
 @chat.function(
@@ -64,10 +64,10 @@ async def list_access_rules(ctx, params: ListAccessRulesParams) -> ActionResult:
     try:
         data = await cc.call(ctx, conn, "show-access-rulebase", {"name": params.layer, "limit": 500})
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
     items = [_rule_from(r) for r in data.get("rulebase", []) if r.get("type") == "access-rule"]
-    return ActionResult(success=True, data=AccessRuleList(title=f"{len(items)} rule(s) in '{params.layer}'", items=items))
+    return ActionResult.success(AccessRuleList(title=f"{len(items)} rule(s) in '{params.layer}'", items=items), summary="Access rules listed.")
 
 
 @chat.function(
@@ -83,9 +83,9 @@ async def get_access_rule(ctx, params: GetAccessRuleParams) -> ActionResult:
     try:
         data = await cc.call(ctx, conn, "show-access-rule", {"layer": params.layer, "name": params.name})
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
-    return ActionResult(success=True, data=_rule_from(data))
+    return ActionResult.success(_rule_from(data), summary="Access rule retrieved.")
 
 
 @chat.function(
@@ -108,9 +108,9 @@ async def create_access_rule(ctx, params: CreateAccessRuleParams) -> ActionResul
     try:
         data = await cc.call(ctx, conn, "add-access-rule", body)
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
-    return ActionResult(success=True, data=_rule_from(data))
+    return ActionResult.success(_rule_from(data), summary="Access rule created.")
 
 
 @chat.function(
@@ -131,9 +131,9 @@ async def update_access_rule(ctx, params: UpdateAccessRuleParams) -> ActionResul
     try:
         data = await cc.call(ctx, conn, "set-access-rule", body)
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
-    return ActionResult(success=True, data=_rule_from(data))
+    return ActionResult.success(_rule_from(data), summary="Access rule updated.")
 
 
 @chat.function(
@@ -149,9 +149,9 @@ async def delete_access_rule(ctx, params: DeleteAccessRuleParams) -> ActionResul
     try:
         await cc.call(ctx, conn, "delete-access-rule", {"layer": params.layer, "name": params.name})
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
-    return ActionResult(success=True, data=DeleteResult(id=params.name, title=params.name, deleted=True))
+    return ActionResult.success(DeleteResult(id=params.name, title=params.name, deleted=True), summary="Access rule deleted.")
 
 
 @chat.function(
@@ -167,10 +167,10 @@ async def publish_changes(ctx, params: PublishChangesParams) -> ActionResult:
     try:
         data = await cc.call(ctx, conn, "publish", {})
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
     task_id = data.get("task-id", "")
-    return ActionResult(success=True, data=PublishResult(id=task_id, title="Publish", task_id=task_id, status="pending"))
+    return ActionResult.success(PublishResult(id=task_id, title="Publish", task_id=task_id, status="pending"), summary="Publish changes done.")
 
 
 @chat.function(
@@ -186,9 +186,9 @@ async def discard_changes(ctx, params: DiscardChangesParams) -> ActionResult:
     try:
         await cc.call(ctx, conn, "discard", {})
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
-    return ActionResult(success=True, data=PublishResult(id="", title="Discard", status="discarded"))
+    return ActionResult.success(PublishResult(id="", title="Discard", status="discarded"), summary="Discard changes done.")
 
 
 @chat.function(
@@ -204,10 +204,10 @@ async def list_policy_packages(ctx, params: ListPolicyPackagesParams) -> ActionR
     try:
         data = await cc.call(ctx, conn, "show-packages", {"limit": 100})
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
     items = [PolicyPackage(id=p.get("uid", ""), title=p.get("name", "")) for p in data.get("packages", [])]
-    return ActionResult(success=True, data=PolicyPackageList(title=f"{len(items)} policy package(s)", items=items))
+    return ActionResult.success(PolicyPackageList(title=f"{len(items)} policy package(s)", items=items), summary="Policy packages listed.")
 
 
 @chat.function(
@@ -225,10 +225,10 @@ async def install_policy(ctx, params: InstallPolicyParams) -> ActionResult:
             "policy-package": params.policy_package, "targets": params.targets,
         })
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
     task_id = data.get("task-id", "")
-    return ActionResult(success=True, data=TaskStatus(id=task_id, title=f"Install policy task {task_id}", task_id=task_id, status="pending"))
+    return ActionResult.success(TaskStatus(id=task_id, title=f"Install policy task {task_id}", task_id=task_id, status="pending"), summary="Install policy done.")
 
 
 @chat.function(
@@ -244,14 +244,14 @@ async def get_task_status(ctx, params: GetTaskStatusParams) -> ActionResult:
     try:
         data = await cc.call(ctx, conn, "show-task", {"task-id": params.task_id})
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
     tasks = data.get("tasks", [])
     task = tasks[0] if tasks else {}
-    return ActionResult(success=True, data=TaskStatus(
+    return ActionResult.success(TaskStatus(
         id=params.task_id, title=f"Task {params.task_id}", task_id=params.task_id,
         status=task.get("status", "unknown"), progress=task.get("progress-percentage", 0),
-    ))
+    ), summary="Task status retrieved.")
 
 
 @chat.function(
@@ -267,10 +267,10 @@ async def list_gateways(ctx, params: ListGatewaysParams) -> ActionResult:
     try:
         data = await cc.call(ctx, conn, "show-gateways-and-servers", {"limit": 100})
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
     items = [
         Gateway(id=g.get("uid", ""), title=g.get("name", ""), ip_address=g.get("ipv4-address", ""), sofaware_version=g.get("version", ""))
         for g in data.get("objects", [])
     ]
-    return ActionResult(success=True, data=GatewayList(title=f"{len(items)} gateway(s)/server(s)", items=items))
+    return ActionResult.success(GatewayList(title=f"{len(items)} gateway(s)/server(s)", items=items), summary="Gateways listed.")

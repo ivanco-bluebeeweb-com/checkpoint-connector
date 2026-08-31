@@ -55,7 +55,7 @@ async def _authed(ctx, connection_id: str = "") -> dict | ActionResult:
     _persist_if_refreshed(ctx, conn) afterward to save a rotated sid."""
     conn = await _resolve_connection(ctx, connection_id)
     if conn is None:
-        return ActionResult(success=False, error=cc._MESSAGES[cc.ACCOUNT_MISSING])
+        return ActionResult.error(cc._MESSAGES[cc.ACCOUNT_MISSING])
     return conn
 
 
@@ -78,7 +78,7 @@ async def connect_checkpoint(ctx, params: ConnectCheckpointParams) -> ActionResu
     try:
         sid = await cc.login(ctx, params.host, params.username, params.password, params.domain)
     except cc.ClientFail as exc:
-        return ActionResult(success=False, error=exc.message())
+        return ActionResult.error(exc.message())
     connections = await _load_connections(ctx)
     conn_id = str(uuid.uuid4())
     label = params.label or params.host
@@ -88,9 +88,9 @@ async def connect_checkpoint(ctx, params: ConnectCheckpointParams) -> ActionResu
         "sid": sid, "label": label,
     })
     await _save_connections(ctx, connections)
-    return ActionResult(success=True, data=ProviderConnection(
+    return ActionResult.success(ProviderConnection(
         id=conn_id, title=label, connected=True, detail=params.host,
-    ))
+    ), summary="Checkpoint connected.")
 
 
 @chat.function(
@@ -108,7 +108,7 @@ async def list_connections(ctx, params: NoParams) -> ActionResult:
         )
         for c in connections
     ]
-    return ActionResult(success=True, data=ProviderConnectionList(items=items))
+    return ActionResult.success(ProviderConnectionList(items=items), summary="Connections listed.")
 
 
 @chat.function(
@@ -121,8 +121,8 @@ async def disconnect_checkpoint(ctx, params: DisconnectParams) -> ActionResult:
     connections = await _load_connections(ctx)
     target = next((c for c in connections if c.get("id") == params.connection_id), None)
     if target is None:
-        return ActionResult(success=False, error="Connection not found.")
+        return ActionResult.error("Connection not found.")
     await cc.logout(ctx, target)
     remaining = [c for c in connections if c.get("id") != params.connection_id]
     await _save_connections(ctx, remaining)
-    return ActionResult(success=True, data=DeleteResult(deleted=True))
+    return ActionResult.success(DeleteResult(deleted=True), summary="Checkpoint disconnected.")

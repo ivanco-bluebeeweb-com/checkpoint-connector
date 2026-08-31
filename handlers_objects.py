@@ -34,13 +34,13 @@ async def list_hosts(ctx, params: ListHostsParams) -> ActionResult:
     try:
         data = await cc.call(ctx, conn, "show-hosts", {"limit": 500})
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
     items = [
         Host(id=h.get("uid", ""), title=h.get("name", ""), name=h.get("name", ""), ip_address=h.get("ipv4-address", ""))
         for h in data.get("objects", [])
     ]
-    return ActionResult(success=True, data=HostList(title=f"{len(items)} host(s)", items=items))
+    return ActionResult.success(HostList(title=f"{len(items)} host(s)", items=items), summary="Hosts listed.")
 
 
 @chat.function(
@@ -56,9 +56,9 @@ async def create_host(ctx, params: CreateHostParams) -> ActionResult:
     try:
         data = await cc.call(ctx, conn, "add-host", {"name": params.name, "ip-address": params.ip_address})
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
-    return ActionResult(success=True, data=Host(id=data.get("uid", ""), title=params.name, name=params.name, ip_address=params.ip_address))
+    return ActionResult.success(Host(id=data.get("uid", ""), title=params.name, name=params.name, ip_address=params.ip_address), summary="Host created.")
 
 
 @chat.function(
@@ -74,9 +74,9 @@ async def update_host(ctx, params: UpdateHostParams) -> ActionResult:
     try:
         await cc.call(ctx, conn, "set-host", {"name": params.name, "ip-address": params.ip_address})
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
-    return ActionResult(success=True, data=Host(id=params.name, title=params.name, name=params.name, ip_address=params.ip_address))
+    return ActionResult.success(Host(id=params.name, title=params.name, name=params.name, ip_address=params.ip_address), summary="Host updated.")
 
 
 @chat.function(
@@ -92,9 +92,9 @@ async def delete_host(ctx, params: DeleteHostParams) -> ActionResult:
     try:
         await cc.call(ctx, conn, "delete-host", {"name": params.name})
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
-    return ActionResult(success=True, data=DeleteResult(id=params.name, title=params.name, deleted=True))
+    return ActionResult.success(DeleteResult(id=params.name, title=params.name, deleted=True), summary="Host deleted.")
 
 
 @chat.function(
@@ -110,7 +110,7 @@ async def list_networks(ctx, params: ListNetworksParams) -> ActionResult:
     try:
         data = await cc.call(ctx, conn, "show-networks", {"limit": 500})
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
     items = [
         Network(
@@ -119,7 +119,7 @@ async def list_networks(ctx, params: ListNetworksParams) -> ActionResult:
         )
         for n in data.get("objects", [])
     ]
-    return ActionResult(success=True, data=NetworkList(title=f"{len(items)} network(s)", items=items))
+    return ActionResult.success(NetworkList(title=f"{len(items)} network(s)", items=items), summary="Networks listed.")
 
 
 @chat.function(
@@ -137,9 +137,9 @@ async def create_network(ctx, params: CreateNetworkParams) -> ActionResult:
             "name": params.name, "subnet": params.subnet, "subnet-mask": params.mask,
         })
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
-    return ActionResult(success=True, data=Network(id=data.get("uid", ""), title=params.name, name=params.name, subnet=params.subnet, mask=params.mask))
+    return ActionResult.success(Network(id=data.get("uid", ""), title=params.name, name=params.name, subnet=params.subnet, mask=params.mask), summary="Network created.")
 
 
 @chat.function(
@@ -160,9 +160,9 @@ async def update_network(ctx, params: UpdateNetworkParams) -> ActionResult:
     try:
         await cc.call(ctx, conn, "set-network", body)
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
-    return ActionResult(success=True, data=Network(id=params.name, title=params.name, name=params.name, subnet=params.subnet, mask=params.mask))
+    return ActionResult.success(Network(id=params.name, title=params.name, name=params.name, subnet=params.subnet, mask=params.mask), summary="Network updated.")
 
 
 @chat.function(
@@ -178,9 +178,9 @@ async def delete_network(ctx, params: DeleteNetworkParams) -> ActionResult:
     try:
         await cc.call(ctx, conn, "delete-network", {"name": params.name})
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
-    return ActionResult(success=True, data=DeleteResult(id=params.name, title=params.name, deleted=True))
+    return ActionResult.success(DeleteResult(id=params.name, title=params.name, deleted=True), summary="Network deleted.")
 
 
 @chat.function(
@@ -196,13 +196,13 @@ async def list_groups(ctx, params: ListGroupsParams) -> ActionResult:
     try:
         data = await cc.call(ctx, conn, "show-groups", {"limit": 500})
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
     items = [
         Group(id=g.get("uid", ""), title=g.get("name", ""), name=g.get("name", ""), member_count=len(g.get("members", [])))
         for g in data.get("objects", [])
     ]
-    return ActionResult(success=True, data=GroupList(title=f"{len(items)} group(s)", items=items))
+    return ActionResult.success(GroupList(title=f"{len(items)} group(s)", items=items), summary="Groups listed.")
 
 
 @chat.function(
@@ -221,9 +221,9 @@ async def create_group(ctx, params: CreateGroupParams) -> ActionResult:
     try:
         data = await cc.call(ctx, conn, "add-group", body)
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
-    return ActionResult(success=True, data=Group(id=data.get("uid", ""), title=params.name, name=params.name, member_count=len(params.members)))
+    return ActionResult.success(Group(id=data.get("uid", ""), title=params.name, name=params.name, member_count=len(params.members)), summary="Group created.")
 
 
 @chat.function(
@@ -240,7 +240,7 @@ async def list_services(ctx, params: ListServicesParams) -> ActionResult:
         tcp = await cc.call(ctx, conn, "show-services-tcp", {"limit": 500})
         udp = await cc.call(ctx, conn, "show-services-udp", {"limit": 500})
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
     items = [
         ServiceObj(id=s.get("uid", ""), title=s.get("name", ""), name=s.get("name", ""), protocol="tcp", port=s.get("port", ""))
@@ -249,7 +249,7 @@ async def list_services(ctx, params: ListServicesParams) -> ActionResult:
         ServiceObj(id=s.get("uid", ""), title=s.get("name", ""), name=s.get("name", ""), protocol="udp", port=s.get("port", ""))
         for s in udp.get("objects", [])
     ]
-    return ActionResult(success=True, data=ServiceList(title=f"{len(items)} service(s)", items=items))
+    return ActionResult.success(ServiceList(title=f"{len(items)} service(s)", items=items), summary="Services listed.")
 
 
 @chat.function(
@@ -266,9 +266,9 @@ async def create_service(ctx, params: CreateServiceParams) -> ActionResult:
     try:
         data = await cc.call(ctx, conn, command, {"name": params.name, "port": params.port})
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
-    return ActionResult(success=True, data=ServiceObj(id=data.get("uid", ""), title=params.name, name=params.name, protocol=params.protocol, port=params.port))
+    return ActionResult.success(ServiceObj(id=data.get("uid", ""), title=params.name, name=params.name, protocol=params.protocol, port=params.port), summary="Service created.")
 
 
 @chat.function(
@@ -285,6 +285,6 @@ async def delete_service(ctx, params: DeleteServiceParams) -> ActionResult:
     try:
         await cc.call(ctx, conn, command, {"name": params.name})
     except cc.ClientFail as e:
-        return ActionResult(success=False, error=e.message())
+        return ActionResult.error(e.message())
     await _persist_if_refreshed(ctx, conn)
-    return ActionResult(success=True, data=DeleteResult(id=params.name, title=params.name, deleted=True))
+    return ActionResult.success(DeleteResult(id=params.name, title=params.name, deleted=True), summary="Service deleted.")

@@ -34,7 +34,7 @@ async def bulk_access_rule_action(ctx, params: BulkAccessRuleActionParams) -> Ac
         except cc.ClientFail as e:
             items.append(BulkActionOutcome(id=name, ok=False, error=e.message()))
     await _persist_if_refreshed(ctx, conn)
-    return ActionResult(success=True, data=BulkActionResult(title="Bulk access rule status change", items=items))
+    return ActionResult.success(BulkActionResult(title="Bulk access rule status change", items=items), summary="Bulk access rule action done.")
 
 
 @chat.function(
@@ -46,7 +46,7 @@ async def bulk_access_rule_action(ctx, params: BulkAccessRuleActionParams) -> Ac
 async def audit_checkpoint_estate(ctx, params: NoParams) -> ActionResult:
     connections = await _load_connections(ctx)
     if not connections:
-        return ActionResult(success=False, error=cc._MESSAGES[cc.ACCOUNT_MISSING])
+        return ActionResult.error(cc._MESSAGES[cc.ACCOUNT_MISSING])
     findings: list[AuditFinding] = []
     for conn in connections:
         label = conn.get("label", "") or conn.get("host", "")
@@ -90,4 +90,4 @@ async def audit_checkpoint_estate(ctx, params: NoParams) -> ActionResult:
                 ))
         except cc.ClientFail:
             pass
-    return ActionResult(success=True, data=AuditReport(title=f"{len(findings)} finding(s)", items=findings))
+    return ActionResult.success(AuditReport(title=f"{len(findings)} finding(s)", items=findings), summary="Checkpoint estate audit ready.")
