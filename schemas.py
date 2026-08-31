@@ -250,6 +250,7 @@ class BulkAccessRuleActionParams(_Scoped):
 
 
 class BulkActionOutcome(sdl.Entity):
+    title: str = ""
     id: str = ""
     ok: bool = False
     error: str = ""
